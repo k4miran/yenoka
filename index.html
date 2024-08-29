@@ -18,11 +18,6 @@
             padding: 20px;
             font-size: 24px;
         }
-        #tradingview_chart {
-            margin: 20px auto;
-            width: 80%;
-            height: 400px;
-        }
         #signals {
             margin: 20px;
             padding: 20px;
@@ -41,6 +36,9 @@
         .sell {
             color: #e74c3c;
         }
+        .loading {
+            color: #3498db;
+        }
     </style>
 </head>
 <body>
@@ -49,52 +47,51 @@
     DOGS/USDT Alım ve Satım Sinyalleri
 </header>
 
-<div id="tradingview_chart"></div>
-
 <div id="signals">
-    <div class="signal buy">Alım Sinyali: - Bekleniyor...</div>
-    <div class="signal sell">Satım Sinyali: - Bekleniyor...</div>
+    <div class="signal buy">Alım Sinyali: <span id="buy-signal">- Bekleniyor...</span></div>
+    <div class="signal sell">Satım Sinyali: <span id="sell-signal">- Bekleniyor...</span></div>
+    <div class="signal loading" id="loading">Veriler alınıyor...</div>
 </div>
 
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 <script>
-    // TradingView Chart Integration
-    new TradingView.widget({
-        "width": 800,
-        "height": 400,
-        "symbol": "BINANCE:DOGSUSDT",
-        "interval": "15",
-        "timezone": "Etc/UTC",
-        "theme": "light",
-        "style": "1",
-        "locale": "en",
-        "toolbar_bg": "#f1f3f6",
-        "enable_publishing": false,
-        "allow_symbol_change": true,
-        "container_id": "tradingview_chart"
-    });
+    async function fetchMarketData() {
+        // Bu fonksiyon gerçek API'ye bağlanmalı ve verileri çekmeli
+        // Örnek: OKX API'den DOGS/USDT verilerini çekin
 
-    // Basic Trading Signals (for demonstration)
-    // These would usually be fetched from a more sophisticated analysis or API
-
-    function updateSignals() {
-        const buySignal = document.querySelector('.buy');
-        const sellSignal = document.querySelector('.sell');
-
-        // Random signal generation for demo
-        if (Math.random() > 0.5) {
-            buySignal.textContent = "Alım Sinyali: - Güçlü Alım";
-            sellSignal.textContent = "Satım Sinyali: - Bekleniyor...";
-        } else {
-            buySignal.textContent = "Alım Sinyali: - Bekleniyor...";
-            sellSignal.textContent = "Satım Sinyali: - Güçlü Satım";
-        }
+        // Test amaçlı sabit veriler
+        return {
+            price: Math.random() * 100,
+            smaShort: Math.random() * 100,
+            smaLong: Math.random() * 100
+        };
     }
 
-    // Update signals every 10 seconds
-    setInterval(updateSignals, 10000);
+    function generateSignals(data) {
+        const buySignal = document.getElementById('buy-signal');
+        const sellSignal = document.getElementById('sell-signal');
+        const loading = document.getElementById('loading');
 
-    // Initial call to update signals
+        // Basit sinyal analizi
+        if (data.smaShort > data.smaLong) {
+            buySignal.textContent = `Alım Sinyali: ${data.price.toFixed(2)} USD`;
+            sellSignal.textContent = `Satım Sinyali: Bekleniyor...`;
+        } else {
+            buySignal.textContent = `Alım Sinyali: Bekleniyor...`;
+            sellSignal.textContent = `Satım Sinyali: ${data.price.toFixed(2)} USD`;
+        }
+
+        loading.style.display = 'none'; // Veriler alındıktan sonra yüklenme mesajını gizle
+    }
+
+    async function updateSignals() {
+        const marketData = await fetchMarketData();
+        generateSignals(marketData);
+    }
+
+    // Sinyalleri belirli aralıklarla güncelle
+    setInterval(updateSignals, 30000); // Her 30 saniyede bir güncelle
+
+    // İlk sinyal güncellemesi
     updateSignals();
 </script>
 
