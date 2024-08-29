@@ -18,6 +18,13 @@
             padding: 20px;
             font-size: 24px;
         }
+        #chart-container {
+            width: 80%;
+            margin: 20px auto;
+        }
+        canvas {
+            background-color: #fff;
+        }
         #signals {
             margin: 20px;
             padding: 20px;
@@ -47,45 +54,124 @@
     DOGS/USDT Alım ve Satım Sinyalleri
 </header>
 
+<div id="chart-container">
+    <canvas id="priceChart" width="600" height="400"></canvas>
+</div>
+
 <div id="signals">
     <div class="signal buy">Alım Sinyali: <span id="buy-signal">- Bekleniyor...</span></div>
     <div class="signal sell">Satım Sinyali: <span id="sell-signal">- Bekleniyor...</span></div>
     <div class="signal loading" id="loading">Veriler alınıyor...</div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Grafik verilerini tutacak değişkenler
+    const labels = []; // Tarih veya zaman damgaları
+    const prices = []; // Fiyat verileri
+    const buySignals = []; // Alım sinyalleri
+    const sellSignals = []; // Satım sinyalleri
+
+    // Chart.js ile grafik oluşturma
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    const priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'DOGS/USDT Fiyat',
+                data: prices,
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                borderWidth: 1
+            }, {
+                label: 'Alım Sinyalleri',
+                data: buySignals,
+                borderColor: '#27ae60',
+                backgroundColor: 'rgba(39, 174, 96, 0.2)',
+                borderWidth: 2,
+                pointStyle: 'circle',
+                pointRadius: 6,
+                pointBackgroundColor: '#27ae60',
+                showLine: false
+            }, {
+                label: 'Satım Sinyalleri',
+                data: sellSignals,
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                borderWidth: 2,
+                pointStyle: 'triangle',
+                pointRadius: 6,
+                pointBackgroundColor: '#e74c3c',
+                showLine: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(tooltipItem) {
+                            return tooltipItem.dataset.label + ': ' + tooltipItem.raw;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Zaman'
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Fiyat (USDT)'
+                    }
+                }
+            }
+        }
+    });
+
     async function fetchMarketData() {
         // Bu fonksiyon gerçek API'ye bağlanmalı ve verileri çekmeli
         // Örnek: OKX API'den DOGS/USDT verilerini çekin
 
         // Test amaçlı sabit veriler
         return {
+            time: new Date().toISOString(),
             price: Math.random() * 100,
             smaShort: Math.random() * 100,
             smaLong: Math.random() * 100
         };
     }
 
-    function generateSignals(data) {
-        const buySignal = document.getElementById('buy-signal');
-        const sellSignal = document.getElementById('sell-signal');
-        const loading = document.getElementById('loading');
+    function updateChart(data) {
+        labels.push(data.time);
+        prices.push(data.price);
 
         // Basit sinyal analizi
         if (data.smaShort > data.smaLong) {
-            buySignal.textContent = `Alım Sinyali: ${data.price.toFixed(2)} USD`;
-            sellSignal.textContent = `Satım Sinyali: Bekleniyor...`;
+            buySignals.push({x: data.time, y: data.price});
+            sellSignals.push(null); // Satım sinyali boş
         } else {
-            buySignal.textContent = `Alım Sinyali: Bekleniyor...`;
-            sellSignal.textContent = `Satım Sinyali: ${data.price.toFixed(2)} USD`;
+            sellSignals.push({x: data.time, y: data.price});
+            buySignals.push(null); // Alım sinyali boş
         }
 
-        loading.style.display = 'none'; // Veriler alındıktan sonra yüklenme mesajını gizle
+        // Güncellenmiş verileri grafiğe uygulayın
+        priceChart.update();
     }
 
     async function updateSignals() {
         const marketData = await fetchMarketData();
-        generateSignals(marketData);
+        updateChart(marketData);
     }
 
     // Sinyalleri belirli aralıklarla güncelle
